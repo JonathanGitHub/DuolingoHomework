@@ -1,27 +1,62 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package utils;
 
+import java.io.IOException;
+import java.util.List;
+import org.languagetool.JLanguageTool;
+import org.languagetool.Language;
+import org.languagetool.rules.Rule;
+import org.languagetool.rules.RuleMatch;
+
 /**
- *
+ * StringUtils is a Java class that provides various string methods which are frequently
+ * used in DuolingoHomework.java
+ * 
  * @author jianyang
+ * Last Modified: 2014-10-21
+ * Email: cmu dot jonathan at gmail dot com
  */
 public class StringUtils {
     
-    public static String generateHighlights(int startOfCorrect, int endOfCorrect, int startOfStu, int endOfStu){
-        return "((" + startOfCorrect + "," + endOfCorrect + "), (" + startOfStu + "," + endOfStu + "))";
+    /**
+    * Returns a string expression which highlights blamed words based on input indexes. 
+    * ((c1, c2), ((s1, s2)) and c1/s1 is the index of the first character of a blamed 
+    * word in  the correct/student's answer and c2/s2 is the index of the last character 
+    * of that same blamed word
+    * 
+    * @return      the string expressionL
+    */
+    public static String generateHighlights(int c1, int c2, int s1, int s2){
+        return "((" + c1 + "," + c2 + "), (" + s1 + "," + s2 + "))";
     }
-    //Check whether a word is valid word
-//    public static boolean isValidWord(String str){
-//        return 
-//    }
+    
+   /**
+    * Returns a boolean value indicates whether the input string is a valid word in 
+    * The implementation of this method is based on the languagetool api
+    * Source: http://wiki.languagetool.org/java-api
+    * 
+    * @return      a boolean value 
+    */
+    public static boolean isValidWord(String str) throws IOException{
+        boolean isValid = true;
+         JLanguageTool langTool = new JLanguageTool(Language.getLanguageForShortName("en-US"));
+         for (Rule rule : langTool.getAllRules()) {
+            if (!rule.isDictionaryBasedSpellingRule()) {
+                langTool.disableRule(rule.getId());
+            }
+         }
+        List<RuleMatch> matches = langTool.check(str);
+        for (RuleMatch match : matches) {
+            isValid = false;
+        }
+        return isValid;
+    }
    
-    //minDistance method return the minium operations that needed in order to 
-    //convert word2 into word1
-    //Referece: http://www.programcreek.com/2013/12/edit-distance-in-java/
+   /**
+    * Returns the minium operations that needed in order to convert one word into another . 
+    * The implementation of this method is based on http://www.programcreek.com/2013/12/edit-distance-in-java/
+    * 
+    * @return       minimum distance
+    */
     public static int minDistance(String word1, String word2) {
 	int len1 = word1.length();
 	int len2 = word2.length();
@@ -42,7 +77,6 @@ public class StringUtils {
 		char c1 = word1.charAt(i);
 		for (int j = 0; j < len2; j++) {
 			char c2 = word2.charAt(j);
- 
 			//if last two chars equal
 			if (c1 == c2) {
 				//update dp value for +1 length
@@ -58,7 +92,6 @@ public class StringUtils {
 			}
 		}
 	}
- 
-	return dp[len1][len2];
+ 	return dp[len1][len2];
     }
 }
