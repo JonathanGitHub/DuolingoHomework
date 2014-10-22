@@ -26,14 +26,6 @@ public class DuolingoHomework {
 
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
-        //Two test cases 1) this is      your house
-        //2) This is funk    This is fuck(wrong word)|| This is fukk(typo)
-//        System.out.println(grade("This is funk.", "This is fuck!"));
-        
-//        System.out.println(StringUtils.isValidWord("American"));
-//        System.out.println(StringUtils.isValidWord("mi"));
-//        System.out.println(StringUtils.isValidWord("hhouse"));
-//        System.out.println(StringUtils.isValidWord("über"));
         System.out.println("DuolingoGrader is grading....Just a few seconds...");
         System.out.println("##################################################################");
         System.out.println("Required test cases....");
@@ -44,6 +36,11 @@ public class DuolingoHomework {
         System.out.println(DuolingoGrader.grade("This is my house.", "This is mi hhouse"));
         System.out.println(DuolingoGrader.grade("This is my house.", "This my house!"));
         System.out.println(DuolingoGrader.grade("This is my house.", "This is your house!"));
+        System.out.println(DuolingoGrader.grade("The man eats the cheese.", "Thhe maan eatss thhe chheese"));
+        System.out.println(DuolingoGrader.grade("The man eats the cheese.", "Thhe maan eatss thhhe chheese"));
+        System.out.println(DuolingoGrader.grade("house", "housed"));
+        System.out.println(DuolingoGrader.grade("This is my house.", "This house!"));
+        System.out.println(DuolingoGrader.grade("That is my house.", "This is your house!"));
         
         System.out.println("");
         System.out.println("Extra test cases....");
@@ -57,12 +54,9 @@ public class DuolingoHomework {
         System.out.println(DuolingoGrader.grade("a small dog", "a small dog is what?>"));
         System.out.println(DuolingoGrader.grade("This is funk", "This is flunk"));
         System.out.println(DuolingoGrader.grade("This is funk", "This is fukk"));
+        System.out.println(DuolingoGrader.grade("This is good", "this is"));
         System.out.println("##################################################################");
-        System.out.println("DuolingoGrader is finished its task, did you brew your coffee yet?");
-        
-//        System.out.println(DuolingoGrader.grade("你是 我 吗？", "你是 吗？"));
-        
+        System.out.println("Grades are shown above...Don't worry about mistakes, you can do better next time!");      
     }
 }
     
-

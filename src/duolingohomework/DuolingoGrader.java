@@ -20,7 +20,7 @@ import utils.StringUtils;
 public class DuolingoGrader {
     
     public static final String CORRECT_ANSWER_EMPTY_MSG = "Correct answer cannot be null or empty";
-    public static final String STUDENT_ANSWER_EMTPY_MSG = "Student answer cannot be null";
+    public static final String STUDENT_ANSWER_EMTPY_MSG = "Student answer cannot be null or empty";
            
     /**
         String grade(correct_answer, student_answer):
@@ -41,12 +41,13 @@ public class DuolingoGrader {
     * 
     */
     public static String grade(String correct_answer, String student_answer) throws IOException{
-        
+        String input = ">>> grade(\"" + correct_answer + "\", " + "\"" + student_answer + 
+                "\")" + "\n";
          //edge cases
         if (correct_answer == null || correct_answer.isEmpty()) {
             return CORRECT_ANSWER_EMPTY_MSG;
         }
-        if(student_answer == null) {
+        if(student_answer == null || student_answer.isEmpty()) {
             return STUDENT_ANSWER_EMTPY_MSG;
         }
         
@@ -54,16 +55,15 @@ public class DuolingoGrader {
         correct_answer = correct_answer.toLowerCase();
         student_answer = student_answer.toLowerCase();
         //generate a highlight list
-        List<String> highlights = new ArrayList<String>();
+        ArrayList<String> highlights = new ArrayList<String>();
         //instantiate boolean values
         boolean hasTypo = false;
         boolean hasWrong = false;
         boolean hasMissing = false;
-       
         
         //trim all white spaces and split the text into a String array      
-        List<String> correctList = new ArrayList<String>();
-        List<String> studentList = new ArrayList<String>();
+        ArrayList<String> correctList = new ArrayList<String>();
+        ArrayList<String> studentList = new ArrayList<String>();
         
         String correct_trimmed = correct_answer.trim().toLowerCase();
         String student_trimmed = student_answer.trim().toLowerCase();
@@ -88,103 +88,147 @@ public class DuolingoGrader {
             }
             
         }
-              
-//        System.out.println("correctList: " + correctList.toString());
-//        System.out.println("studentList: " + studentList.toString());
-//        
-//        System.out.println("correctList size: " + correctList.size());
-//        System.out.println("studentList size: " + studentList.size());
         
-        
-        //typo or wrong words
+        //Case 1: if two lists have same length, then result is any of the the three[typo, wrong, none]
         if (correctLength == studentLength) {
-            int numberOfCorrect = 0;
+            int numberOfCorrect = 0;//denote number of correct words from student's answer
             //compare each element from correctList with its counterpart from studentList
             for(int k = 0; k < correctLength; k++){
                 if (!studentList.isEmpty() && correctList.get(k).equals(studentList.get(k))){
                     numberOfCorrect++;
                 } else{
-                    if(!studentList.isEmpty() && StringUtils.minDistance(correctList.get(k), studentList.get(k)) == 1 && !StringUtils.isValidWord(studentList.get(k))){
+                    //typo detection
+                    if(!studentList.isEmpty() && StringUtils.minDistance(correctList.get(k), studentList.get(k)) == 1
+                                && !StringUtils.isValidWord(studentList.get(k))){
                         hasTypo = true;
                         numberOfCorrect++;
-                        //find the indexes of the correct words
-                        int startOfCorrect = correct_answer.indexOf(correctList.get(k));
-                        int endOfCorrect = startOfCorrect + correctList.get(k).length();
-                        //find the indexes of blamed words
-                        int startOfStu = student_answer.indexOf(studentList.get(k));
-                        int endOfStu = startOfStu + studentList.get(k).length();
-                        String hightlight = StringUtils.generateHighlights(startOfCorrect, endOfCorrect, startOfStu, endOfStu);
-                        highlights.add(hightlight);
-                    } else if(!studentList.isEmpty() && StringUtils.minDistance(correctList.get(k), studentList.get(k)) > 1){//wrong words
+                        prepareHighlights(correctList, studentList, k, correct_answer, student_answer, highlights);
+                    } 
+                    //wrong word detection
+                    else if(!studentList.isEmpty() && StringUtils.minDistance(correctList.get(k), studentList.get(k)) == 1 
+                                && StringUtils.isValidWord(studentList.get(k))){
+                         hasWrong = true;
+                         prepareHighlights(correctList, studentList, k, correct_answer, student_answer, highlights);
+                    }
+                    //wrong word detection
+                    else if(!studentList.isEmpty() && StringUtils.minDistance(correctList.get(k), studentList.get(k)) > 1){
                         hasWrong = true;
-                        //find the indexes of the correct words
-                        int startOfCorrect = correct_answer.indexOf(correctList.get(k));
-                        int endOfCorrect = startOfCorrect + correctList.get(k).length();
-                        //find the indexes of blamed words
-                        int startOfStu = student_answer.indexOf(studentList.get(k));
-                        int endOfStu = startOfStu + studentList.get(k).length();
-                        String hightlight = StringUtils.generateHighlights(startOfCorrect, endOfCorrect, startOfStu, endOfStu);
-                        highlights.add(hightlight);
+                        prepareHighlights(correctList, studentList, k, correct_answer, student_answer, highlights);
                     }
                 }
             }
-            if(numberOfCorrect == correctLength ){//how about edge case? correctLength = 1
+            
+            if(numberOfCorrect == correctLength ){
                 if(hasTypo){
-                    return "True, \"typo\", " + highlights.toString();
+                    return input + "(True, \"typo\", " + highlights.toString() + ")" + "\n";
                 }else{
-                    return "True, None, []";
+                    return input + "(True, None, [])" + "\n";
                 }
                 
             } else if(correctLength - numberOfCorrect == 1 ){
-//               System.out.println("numberOfCorrect: " + numberOfCorrect);
-//               System.out.println("correctLength: " + correctLength);
-               return "False, \"wrong_word\", " + highlights.toString();
+               return input + "(False, \"wrong_word\", " + highlights.toString() + ")" + "\n";
             } else {//two wrong words
-                return "False, None, []";
+                return input + "(False, None, [])" + "\n";
             }
-        } else if (correctLength - studentLength == 1){ //missing word, assumes that only one word
+        } 
+        
+        //Case 2: missing word case
+        else if (correctLength - studentLength == 1){ //missing word, assumes that only one word
             int correct_index = 0;
             for(int k = 0; k < studentLength; k++) {
-                //this is my house    is my house
-                //this is my house    this is house
-                
-                /*
-                correct_answer: this is my house.
-                correctList.get(1): is
-                studentList.get(1): my
-                startOfCorrect: 2
-                computer thought Th"is" is the answer, not This "is"
-                Solution: Add a space before "is"
-                */
-
-                if(!correctList.get(correct_index).equals(studentList.get(k))) {//be sure to use equals, not ==
-                    //find the indexes of the correct words
-                        int startOfCorrect = correct_answer.indexOf(" " + correctList.get(correct_index)) + 1;
-                        int endOfCorrect = startOfCorrect + correctList.get(correct_index).length();
-//                        System.out.println("correct_answer: " + correct_answer);
-//                        System.out.println("correctList.get(" + correct_index + "): " + correctList.get(correct_index));
-//                        System.out.println("studentList.get(" + k + "): " + studentList.get(k));
-//                        System.out.println("startOfCorrect: " + startOfCorrect);
-//                        System.out.println("endOfCorrect: " + endOfCorrect);
-                        //find the indexes of blamed words
-                        int startOfStu = startOfCorrect;
-                        int endOfStu = startOfCorrect;
-                        String hightlight = StringUtils.generateHighlights(startOfCorrect, endOfCorrect, startOfStu, endOfStu);
-                        highlights.add(hightlight);
-                        
-                        correct_index++;                       
+                if(!correctList.get(correct_index).equals(studentList.get(k))) {             
+                    prepareMissingWordHighlights(correctList, studentList, correct_index, correct_answer, student_answer, highlights);
+                    correct_index++;                       
                 }
-                correct_index++;
-                
+                correct_index++;          
             }
-             return "False, \"missing\", " + highlights.toString();
+            //Take care of missing word if the position is in the last
+            //Of course this logic won't deal with "me me me" "me me" case but that kind of 
+            //input rarely exist in real world 
+            if(highlights.isEmpty()){//student's answer miss the last correct word
+                prepareMissingWordHighlights(correctList, studentList, correct_index, correct_answer, student_answer, highlights);
+            }
+             return input + "(False, \"missing\", " + highlights.toString() + ")" + "\n";
         } else if(correctLength - studentLength > 1) {
-            return "False, \"none\", []";
+            return input + "(False, None, [])" + "\n";
+            
         }
-        else if(correctLength < studentLength){//wrong words(student input has more words
-            return "False, \"none\", []";
-        }        
+        
+        //Case 3: False case
+        else if(correctLength < studentLength){
+            return input + "(False, None, [])" + "\n";
+        } 
+        //Default return
         return "";
     }  
     
+    //private helper method to prepare Highlights of blamed words
+    private static void prepareHighlights(ArrayList<String> correctList, ArrayList<String> studentList, 
+                int k, String correct_answer, String student_answer, ArrayList<String> highlights){
+        //find the indexes of the correct words
+        int startOfCorrect = correct_answer.indexOf(correctList.get(k));
+        int endOfCorrect = startOfCorrect + correctList.get(k).length();
+        //find the indexes of blamed words
+        int startOfStu = student_answer.indexOf(studentList.get(k));
+        int endOfStu = startOfStu + studentList.get(k).length();
+        String highlight = StringUtils.generateHighlights(startOfCorrect, endOfCorrect, startOfStu, endOfStu);
+        //check whether a highlight exits in hightlights list, if so, iterate till the next one
+        String candidateCorrect = highlight.substring(0, highlight.indexOf("), "));
+        String candidateStu = highlight.substring(highlight.indexOf("), "));
+        while(isHighlightedBefore(highlights, candidateCorrect)){
+            startOfCorrect = endOfCorrect + correct_answer.substring(endOfCorrect).indexOf(correctList.get(k));
+            endOfCorrect = startOfCorrect + correctList.get(k).length();
+            highlight = StringUtils.generateHighlights(startOfCorrect, endOfCorrect, startOfStu, endOfStu);
+            candidateCorrect = highlight.substring(0, highlight.indexOf("), "));
+        }
+        while(isHighlightedBefore(highlights, candidateStu)){
+            startOfStu = endOfStu + student_answer.substring(endOfStu).indexOf(studentList.get(k));
+            endOfStu = startOfStu + studentList.get(k).length();
+            highlight = StringUtils.generateHighlights(startOfCorrect, endOfCorrect, startOfStu, endOfStu);
+            candidateStu = highlight.substring(0, highlight.indexOf("), "));
+        }
+        
+        highlights.add(highlight);      
+    }  
+    
+    //private helper method to prepare Highlights of missing word
+    private static void prepareMissingWordHighlights(ArrayList<String> correctList, ArrayList<String> studentList, 
+                int correct_index, String correct_answer, String student_answer, ArrayList<String> highlights){
+        //find the indexes of the correct words
+         int startOfCorrect = correct_answer.indexOf(" " + correctList.get(correct_index)) + 1;
+         int endOfCorrect = startOfCorrect + correctList.get(correct_index).length();
+         //find the indexes of blamed words
+         int startOfStu = startOfCorrect;
+         int endOfStu = startOfCorrect;
+         String highlight = StringUtils.generateHighlights(startOfCorrect, endOfCorrect, startOfStu, endOfStu);
+         //check whether a highlight exits in hightlights list, if so, iterate till the next one
+         String candidateCorrect = highlight.substring(0, highlight.indexOf("), "));
+         String candidateStu = highlight.substring(highlight.indexOf("), "));
+         while(isHighlightedBefore(highlights, candidateCorrect)){
+             startOfCorrect = endOfCorrect + correct_answer.substring(endOfCorrect).indexOf(" " + correctList.get(correct_index)) + 1;
+             endOfCorrect = startOfCorrect + correctList.get(correct_index).length();
+             highlight = StringUtils.generateHighlights(startOfCorrect, endOfCorrect, startOfStu, endOfStu);
+             candidateCorrect = highlight.substring(0, highlight.indexOf("), "));
+         }
+         while(isHighlightedBefore(highlights, candidateStu)){
+             startOfStu = startOfCorrect;
+             endOfStu = endOfCorrect;
+             highlight = StringUtils.generateHighlights(startOfCorrect, endOfCorrect, startOfStu, endOfStu);
+             candidateStu = highlight.substring(0, highlight.indexOf("), "));
+         }
+        
+         highlights.add(highlight);   
+    }  
+    
+    //private helper to check whether a highlight has been used before
+    private static boolean isHighlightedBefore(ArrayList<String> highlights, String candidate){
+        for(String str:highlights){
+            if(str.contains(candidate)){
+                return true;
+            }
+        }
+        return false;
+    }
 }
+
+
